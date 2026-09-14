@@ -28,40 +28,55 @@ export function GameHUD() {
 
   return (
     <>
-      <div className="absolute left-3 top-3 flex flex-col items-start gap-2">
-        <div className="rounded-lg border border-neutral-700/60 bg-neutral-900/50 px-4 py-2 backdrop-blur-sm">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
-            Score
-          </span>
-          <div className="font-mono text-3xl font-bold tabular-nums leading-tight text-white">
-            {formatScore(score)}
+      <div className="absolute left-3 top-3 flex flex-col items-start gap-2.5">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/60 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <div className="h-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-violet-400" />
+          <div className="px-4 pb-3 pt-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
+              Score
+            </span>
+            <div className="mt-0.5 font-mono text-4xl font-black tabular-nums leading-tight text-white drop-shadow-[0_0_14px_rgba(52,211,153,0.35)]">
+              {formatScore(score)}
+            </div>
           </div>
         </div>
 
         {combo >= 2 && (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 backdrop-blur-sm">
-            <span className="font-mono text-lg font-bold tabular-nums text-emerald-300">
+          <div className="animate-fade-in-up flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 shadow-[0_0_22px_rgba(16,185,129,0.25)] backdrop-blur-xl">
+            <span className="font-mono text-2xl font-black tabular-nums text-emerald-300">
               ×{combo}
             </span>
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-300/80">
-              combo
-            </span>
-            <span className="text-xs text-neutral-400">best {bestCombo}</span>
+            <div className="leading-tight">
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300/80">
+                Combo
+              </span>
+              <span className="block text-xs text-neutral-400">
+                best {bestCombo}
+              </span>
+            </div>
           </div>
         )}
 
-        <div className="rounded-lg border border-neutral-700/60 bg-neutral-900/50 px-3 py-1.5 backdrop-blur-sm">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-400">
+        <div className="rounded-xl border border-white/10 bg-neutral-900/60 px-4 py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-300/90">
             Accuracy
           </span>
-          <div className="font-mono text-lg font-semibold tabular-nums leading-tight text-white">
+          <div className="mt-0.5 font-mono text-2xl font-bold tabular-nums leading-tight text-white">
             {accuracy === null ? '–' : `${accuracy}%`}
           </div>
+          {accuracy !== null && (
+            <div className="mt-1.5 h-1 w-28 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-sky-400 to-emerald-400 transition-all duration-300"
+                style={{ width: `${accuracy}%` }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       <div
-        className={`absolute bottom-3 left-3 rounded-lg border bg-neutral-900/50 px-3 py-1.5 font-mono text-sm tabular-nums backdrop-blur-sm ${fpsTone}`}
+        className={`absolute bottom-3 left-3 rounded-xl border px-3 py-1.5 font-mono text-sm tabular-nums shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl ${fpsTone}`}
       >
         {fps} FPS
       </div>

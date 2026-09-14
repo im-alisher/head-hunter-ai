@@ -16,7 +16,9 @@ export function GameScreen() {
   useEffect(() => () => stop(), [stop])
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden bg-[#070b12]">
+      <div className="pointer-events-none absolute -left-40 -top-40 size-[30rem] rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-44 -right-40 size-[30rem] rounded-full bg-violet-600/10 blur-3xl" />
       <CameraFeed videoRef={videoRef} />
       <DetectionCanvas />
       <GameCanvas />
