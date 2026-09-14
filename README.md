@@ -7,6 +7,10 @@ expire. No mouse, no keyboard — just your head and a camera.
 Built with React, TypeScript, Vite, Zustand, MediaPipe (Face Detection), and HTML
 Canvas.
 
+## Preview
+
+![Head Hunter AI game preview](src/assets/preview.png)
+
 ## How to play
 
 1. Click **Start camera** and allow camera permission.
