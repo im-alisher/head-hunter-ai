@@ -1,7 +1,6 @@
 import { useCameraStore } from '@/features/camera/cameraStore'
 import { useFpsStore } from '@/features/hud/fpsStore'
 import { useScoreStore } from '@/features/scoring/scoreStore'
-import { useFps } from '@/hooks/useFps'
 
 function formatScore(score: number): string {
   return score.toLocaleString('en-US')
@@ -15,8 +14,6 @@ export function GameHUD() {
   const hits = useScoreStore((state) => state.hits)
   const misses = useScoreStore((state) => state.misses)
   const fps = useFpsStore((state) => state.fps)
-
-  useFps()
 
   if (!isReady) return null
 

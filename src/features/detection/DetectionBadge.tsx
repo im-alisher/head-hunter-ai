@@ -1,5 +1,5 @@
-import { useFaceDetection } from '@/hooks/useFaceDetection'
 import type { DetectionStatus } from '@/features/detection/detectionStore'
+import { useDetectionStore } from '@/features/detection/detectionStore'
 
 const STATUS_LABELS: Record<DetectionStatus, string> = {
   idle: 'Detection idle',
@@ -16,7 +16,7 @@ const STATUS_STYLES: Record<DetectionStatus, string> = {
 }
 
 export function DetectionBadge() {
-  const { status } = useFaceDetection()
+  const status = useDetectionStore((state) => state.status)
 
   return (
     <div className="absolute right-3 top-3">

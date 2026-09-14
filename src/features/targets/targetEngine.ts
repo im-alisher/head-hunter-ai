@@ -1,4 +1,5 @@
 import { useCameraStore } from '@/features/camera/cameraStore'
+import type { GameSystem } from '@/features/game/gameLoop'
 import { useTargetStore } from '@/features/targets/targetStore'
 import { useTrackingStore } from '@/features/tracking/trackingStore'
 import {
@@ -16,40 +17,13 @@ const MAX_ACTIVE_TARGETS = 4
 const HIT_TOLERANCE = 1.4
 const SPAWN_HEAD_MARGIN_FACTOR = 4
 
-export class TargetEngine {
-  private rafId: number | null = null
-  private started = false
+export class TargetEngine implements GameSystem {
   private lastSpawnAt = 0
 
-  start(): void {
-    if (this.started) return
-    this.started = true
-    this.rafId = requestAnimationFrame(this.tick)
-  }
-
-  stop(): void {
-    if (!this.started) return
-    this.started = false
-
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-    }
-    this.rafId = null
-    this.lastSpawnAt = 0
-    useTargetStore.setState({ targets: [] })
-  }
-
-  private readonly tick = (time: number): void => {
+  update(time: number): void {
     const video = useCameraStore.getState().videoElement
+    if (!video || video.videoWidth <= 0) return
 
-    if (video && video.videoWidth > 0) {
-      this.update(video.videoWidth, video.videoHeight, time)
-    }
-
-    this.rafId = requestAnimationFrame(this.tick)
-  }
-
-  private update(videoWidth: number, videoHeight: number, now: number): void {
     const { targets } = useTargetStore.getState()
     const { position, isTracking } = useTrackingStore.getState()
 
@@ -58,18 +32,18 @@ export class TargetEngine {
 
     for (const target of targets) {
       if (target.destroyedAt !== undefined) {
-        if (now - target.destroyedAt < DESTRUCTION_DURATION_MS) {
+        if (time - target.destroyedAt < DESTRUCTION_DURATION_MS) {
           next.push(target)
         }
         continue
       }
 
-      if (isTargetExpired(target, now)) {
+      if (isTargetExpired(target, time)) {
         continue
       }
 
       if (position && isTargetHit(position, target, HIT_TOLERANCE)) {
-        next.push({ ...target, destroyedAt: now })
+        next.push({ ...target, destroyedAt: time })
         continue
       }
 
@@ -80,23 +54,28 @@ export class TargetEngine {
     if (
       isTracking &&
       activeCount < MAX_ACTIVE_TARGETS &&
-      now - this.lastSpawnAt >= SPAWN_INTERVAL_MS
+      time - this.lastSpawnAt >= SPAWN_INTERVAL_MS
     ) {
       const target = createTarget({
         id: createId(),
-        now,
-        videoWidth,
-        videoHeight,
+        now: time,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
         exclusion: position,
         minExclusionDistance:
-          calculateTargetRadius(videoWidth) * SPAWN_HEAD_MARGIN_FACTOR,
+          calculateTargetRadius(video.videoWidth) * SPAWN_HEAD_MARGIN_FACTOR,
       })
       if (target) {
         next.push(target)
-        this.lastSpawnAt = now
+        this.lastSpawnAt = time
       }
     }
 
     useTargetStore.setState({ targets: next })
+  }
+
+  dispose(): void {
+    this.lastSpawnAt = 0
+    useTargetStore.setState({ targets: [] })
   }
 }

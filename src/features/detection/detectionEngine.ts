@@ -1,10 +1,12 @@
 import { useDetectionStore } from '@/features/detection/detectionStore'
+import type { GameSystem } from '@/features/game/gameLoop'
 import {
   createFaceDetector,
   detectFaces,
   disposeFaceDetector,
 } from '@/services/vision/faceDetection'
 import type { FaceDetection } from '@/services/vision/types'
+import { CanvasSizer } from '@/utils/canvasSizer'
 import { getErrorMessage } from '@/utils/errors'
 import { computeCoverCrop } from '@/utils/geometry'
 
@@ -23,27 +25,31 @@ function pickHighestConfidence(
   )
 }
 
-export class DetectionEngine {
+export class DetectionEngine implements GameSystem {
   private readonly options: Required<DetectionEngineOptions>
   private detector: Awaited<ReturnType<typeof createFaceDetector>> | null = null
-  private rafId: number | null = null
   private video: HTMLVideoElement | null = null
+  private sizer: CanvasSizer | null = null
+  private disposed = false
 
   constructor(options?: Partial<DetectionEngineOptions>) {
     this.options = { minConfidence: 0.5, ...options }
   }
 
-  async start(video: HTMLVideoElement): Promise<void> {
+  async initialize(video: HTMLVideoElement): Promise<void> {
     const { status } = useDetectionStore.getState()
-    if (status === 'initializing' || status === 'ready') return
+    if (this.disposed || status === 'initializing' || status === 'ready') return
 
-    useDetectionStore.setState({ status: 'initializing', error: null })
     this.video = video
+    useDetectionStore.setState({ status: 'initializing', error: null })
 
     try {
       this.detector = await createFaceDetector()
+      if (this.disposed) {
+        this.releaseDetector()
+        return
+      }
       useDetectionStore.setState({ status: 'ready' })
-      this.rafId = requestAnimationFrame(this.tick)
     } catch (cause) {
       useDetectionStore.setState({
         status: 'error',
@@ -55,18 +61,27 @@ export class DetectionEngine {
     }
   }
 
-  stop(): void {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
+  update(time: number): void {
+    const { video, detector } = this
+    if (!video || !detector || video.videoWidth <= 0) return
+
+    const detections = detectFaces(detector, video, time)
+    const best = pickHighestConfidence(detections)
+    if (best && best.confidence < this.options.minConfidence) {
+      useDetectionStore.setState({ lastDetection: null })
+    } else {
+      useDetectionStore.setState({ lastDetection: best })
     }
-    this.rafId = null
+
+    this.drawDebug(detections)
+  }
+
+  dispose(): void {
+    this.disposed = true
     this.video = null
-
-    if (this.detector) {
-      disposeFaceDetector(this.detector)
-      this.detector = null
-    }
-
+    this.sizer?.dispose()
+    this.sizer = null
+    this.releaseDetector()
     useDetectionStore.setState({
       status: 'idle',
       error: null,
@@ -74,21 +89,11 @@ export class DetectionEngine {
     })
   }
 
-  private readonly tick = (time: number): void => {
-    const { video, detector } = this
-
-    if (video && detector && video.videoWidth > 0) {
-      const detections = detectFaces(detector, video, time)
-      const best = pickHighestConfidence(detections)
-      if (best && best.confidence < this.options.minConfidence) {
-        useDetectionStore.setState({ lastDetection: null })
-      } else {
-        useDetectionStore.setState({ lastDetection: best })
-      }
-      this.drawDebug(detections)
+  private releaseDetector(): void {
+    if (this.detector) {
+      disposeFaceDetector(this.detector)
+      this.detector = null
     }
-
-    this.rafId = requestAnimationFrame(this.tick)
   }
 
   private drawDebug(detections: FaceDetection[]): void {
@@ -99,15 +104,13 @@ export class DetectionEngine {
     const context = canvas.getContext('2d')
     if (!context) return
 
-    const dpr = window.devicePixelRatio || 1
-    const bounds = canvas.getBoundingClientRect()
-    const width = Math.max(1, Math.round(bounds.width * dpr))
-    const height = Math.max(1, Math.round(bounds.height * dpr))
-
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width
-      canvas.height = height
+    if (!this.sizer || this.sizer.canvas !== canvas) {
+      this.sizer?.dispose()
+      this.sizer = new CanvasSizer(canvas)
     }
+
+    this.sizer.applySize()
+    const { width, height } = this.sizer
 
     context.setTransform(1, 0, 0, 1, 0, 0)
     context.clearRect(0, 0, width, height)

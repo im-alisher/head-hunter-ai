@@ -7,21 +7,11 @@ import { GameCanvas } from '@/features/game/GameCanvas'
 import { GameHUD } from '@/features/hud/GameHUD'
 import { TrackingBadge } from '@/features/tracking/TrackingBadge'
 import { useCamera } from '@/hooks/useCamera'
-import { useEffects } from '@/hooks/useEffects'
-import { useFaceDetection } from '@/hooks/useFaceDetection'
-import { useGameRenderer } from '@/hooks/useGameRenderer'
-import { useHeadTracking } from '@/hooks/useHeadTracking'
-import { useScoring } from '@/hooks/useScoring'
-import { useTargets } from '@/hooks/useTargets'
+import { useGameLoop } from '@/hooks/useGameLoop'
 
 export function GameScreen() {
   const { videoRef, start, stop } = useCamera()
-  useFaceDetection()
-  useHeadTracking()
-  useTargets()
-  useScoring()
-  useEffects()
-  useGameRenderer()
+  useGameLoop()
 
   useEffect(() => () => stop(), [stop])
 

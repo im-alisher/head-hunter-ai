@@ -2,6 +2,7 @@ import { useCameraStore } from '@/features/camera/cameraStore'
 import { useEffectsStore } from '@/features/effects/effectsStore'
 import { drawHitRings, drawParticles } from '@/features/effects/effectsDraw'
 import { useGameCanvasStore } from '@/features/game/gameCanvasStore'
+import type { GameSystem } from '@/features/game/gameLoop'
 import {
   drawReticle,
   RETICLE_PULSE_DURATION_MS,
@@ -9,6 +10,7 @@ import {
 import { useTargetStore } from '@/features/targets/targetStore'
 import { drawTargets } from '@/features/targets/targetDraw'
 import { useTrackingStore } from '@/features/tracking/trackingStore'
+import { CanvasSizer } from '@/utils/canvasSizer'
 import { computeCoverCrop } from '@/utils/geometry'
 
 const FADE_IN_RATE = 6
@@ -25,61 +27,39 @@ function smoothstep(t: number): number {
   return t * t * (3 - 2 * t)
 }
 
-export class GameRenderer {
-  private rafId: number | null = null
-  private started = false
+export class GameRenderer implements GameSystem {
   private lastTime = 0
   private reticleLock = 0
+  private sizer: CanvasSizer | null = null
+  private context: CanvasRenderingContext2D | null = null
 
-  start(): void {
-    if (this.started) return
-    this.started = true
-    this.lastTime = performance.now()
-    this.rafId = requestAnimationFrame(this.tick)
-  }
-
-  stop(): void {
-    if (!this.started) return
-    this.started = false
-
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-    }
-    this.rafId = null
-    this.reticleLock = 0
-  }
-
-  private readonly tick = (time: number): void => {
+  update(time: number): void {
     const dt = clamp(time - this.lastTime, 0, 100)
     this.lastTime = time
 
     const canvas = useGameCanvasStore.getState().canvas
-    const video = useCameraStore.getState().videoElement
+    if (!canvas) return
 
-    if (canvas && video && video.videoWidth > 0) {
-      this.render(canvas, video, dt, time)
-    } else if (canvas) {
-      this.clearCanvas(canvas)
+    if (!this.sizer || this.sizer.canvas !== canvas) {
+      this.sizer?.dispose()
+      this.sizer = new CanvasSizer(canvas)
+      this.context = canvas.getContext('2d')
     }
 
-    this.rafId = requestAnimationFrame(this.tick)
-  }
+    const sizer = this.sizer
+    const context = this.context
+    if (!sizer || !context) return
 
-  private render(
-    canvas: HTMLCanvasElement,
-    video: HTMLVideoElement,
-    dt: number,
-    time: number,
-  ): void {
-    const context = canvas.getContext('2d')
-    if (!context) return
+    sizer.applySize()
+    const { width, height, dpr } = sizer
 
-    const dpr = window.devicePixelRatio || 1
-    const bounds = canvas.getBoundingClientRect()
-    const width = Math.max(1, Math.round(bounds.width * dpr))
-    const height = Math.max(1, Math.round(bounds.height * dpr))
+    const video = useCameraStore.getState().videoElement
+    if (!video || video.videoWidth <= 0) {
+      context.setTransform(1, 0, 0, 1, 0, 0)
+      context.clearRect(0, 0, width, height)
+      return
+    }
 
-    this.resizeCanvas(canvas, width, height)
     context.setTransform(1, 0, 0, 1, 0, 0)
     context.clearRect(0, 0, width, height)
 
@@ -95,7 +75,9 @@ export class GameRenderer {
 
     const { particles, rings, lastHitAt } = useEffectsStore.getState()
     drawParticles(context, particles, crop, time)
-    const ringMaxRadius = Math.min(bounds.width, bounds.height) * 0.12
+    const cssWidth = width / dpr
+    const cssHeight = height / dpr
+    const ringMaxRadius = Math.min(cssWidth, cssHeight) * 0.12
     drawHitRings(context, rings, crop, time, ringMaxRadius, dpr)
 
     let pulse = 0
@@ -118,7 +100,7 @@ export class GameRenderer {
         const y = (position.y - crop.offsetY) * crop.scale
         const radius =
           clamp(
-            Math.min(bounds.width, bounds.height) * RADIUS_FRACTION,
+            Math.min(cssWidth, cssHeight) * RADIUS_FRACTION,
             MIN_RADIUS_CSS,
             MAX_RADIUS_CSS,
           ) *
@@ -137,21 +119,10 @@ export class GameRenderer {
     }
   }
 
-  private resizeCanvas(
-    canvas: HTMLCanvasElement,
-    width: number,
-    height: number,
-  ): void {
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width
-      canvas.height = height
-    }
-  }
-
-  private clearCanvas(canvas: HTMLCanvasElement): void {
-    const context = canvas.getContext('2d')
-    if (!context) return
-    context.setTransform(1, 0, 0, 1, 0, 0)
-    context.clearRect(0, 0, canvas.width, canvas.height)
+  dispose(): void {
+    this.sizer?.dispose()
+    this.sizer = null
+    this.context = null
+    this.reticleLock = 0
   }
 }
