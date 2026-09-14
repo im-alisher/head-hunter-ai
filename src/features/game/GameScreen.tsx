@@ -4,6 +4,7 @@ import { CameraOverlay } from '@/features/camera/CameraOverlay'
 import { DetectionBadge } from '@/features/detection/DetectionBadge'
 import { DetectionCanvas } from '@/features/detection/DetectionCanvas'
 import { GameCanvas } from '@/features/game/GameCanvas'
+import { GameHUD } from '@/features/hud/GameHUD'
 import { TrackingBadge } from '@/features/tracking/TrackingBadge'
 import { useCamera } from '@/hooks/useCamera'
 import { useFaceDetection } from '@/hooks/useFaceDetection'
@@ -29,6 +30,7 @@ export function GameScreen() {
       <GameCanvas />
       <DetectionBadge />
       <TrackingBadge />
+      <GameHUD />
       <CameraOverlay onStart={start} />
     </div>
   )
