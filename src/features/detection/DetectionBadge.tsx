@@ -9,10 +9,10 @@ const STATUS_LABELS: Record<DetectionStatus, string> = {
 }
 
 const STATUS_STYLES: Record<DetectionStatus, string> = {
-  idle: 'border-neutral-500/40 bg-neutral-500/20 text-neutral-300',
-  initializing: 'border-amber-400/40 bg-amber-400/10 text-amber-300',
-  ready: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300',
-  error: 'border-red-400/40 bg-red-400/10 text-red-300',
+  idle: 'border-white/10 bg-white/5 text-neutral-300',
+  initializing: 'border-amber-400/30 bg-amber-400/10 text-amber-300',
+  ready: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+  error: 'border-red-400/30 bg-red-400/10 text-red-300',
 }
 
 export function DetectionBadge() {
@@ -21,7 +21,7 @@ export function DetectionBadge() {
   return (
     <div className="absolute right-3 top-3">
       <span
-        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${STATUS_STYLES[status]}`}
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl ${STATUS_STYLES[status]}`}
       >
         <span className="relative flex size-2">
           {status === 'ready' && (
