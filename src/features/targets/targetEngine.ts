@@ -2,10 +2,12 @@ import { useCameraStore } from '@/features/camera/cameraStore'
 import { useTargetStore } from '@/features/targets/targetStore'
 import { useTrackingStore } from '@/features/tracking/trackingStore'
 import {
+  DESTRUCTION_DURATION_MS,
   calculateTargetRadius,
   createTarget,
   isTargetExpired,
   isTargetHit,
+  type Target,
 } from '@/game/targets'
 import { createId } from '@/utils/id'
 
@@ -51,17 +53,33 @@ export class TargetEngine {
     const { targets } = useTargetStore.getState()
     const { position, isTracking } = useTrackingStore.getState()
 
-    let next = targets.filter((target) => !isTargetExpired(target, now))
+    const next: Target[] = []
+    let activeCount = 0
 
-    if (position) {
-      next = next.filter(
-        (target) => !isTargetHit(position, target, HIT_TOLERANCE),
-      )
+    for (const target of targets) {
+      if (target.destroyedAt !== undefined) {
+        if (now - target.destroyedAt < DESTRUCTION_DURATION_MS) {
+          next.push(target)
+        }
+        continue
+      }
+
+      if (isTargetExpired(target, now)) {
+        continue
+      }
+
+      if (position && isTargetHit(position, target, HIT_TOLERANCE)) {
+        next.push({ ...target, destroyedAt: now })
+        continue
+      }
+
+      next.push(target)
+      activeCount += 1
     }
 
     if (
       isTracking &&
-      next.length < MAX_ACTIVE_TARGETS &&
+      activeCount < MAX_ACTIVE_TARGETS &&
       now - this.lastSpawnAt >= SPAWN_INTERVAL_MS
     ) {
       const target = createTarget({

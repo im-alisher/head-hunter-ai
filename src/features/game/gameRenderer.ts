@@ -1,6 +1,11 @@
 import { useCameraStore } from '@/features/camera/cameraStore'
+import { useEffectsStore } from '@/features/effects/effectsStore'
+import { drawHitRings, drawParticles } from '@/features/effects/effectsDraw'
 import { useGameCanvasStore } from '@/features/game/gameCanvasStore'
-import { drawReticle } from '@/features/reticle/reticleDraw'
+import {
+  drawReticle,
+  RETICLE_PULSE_DURATION_MS,
+} from '@/features/reticle/reticleDraw'
 import { useTargetStore } from '@/features/targets/targetStore'
 import { drawTargets } from '@/features/targets/targetDraw'
 import { useTrackingStore } from '@/features/tracking/trackingStore'
@@ -88,6 +93,17 @@ export class GameRenderer {
     const { targets } = useTargetStore.getState()
     drawTargets(context, targets, crop, time, dpr)
 
+    const { particles, rings, lastHitAt } = useEffectsStore.getState()
+    drawParticles(context, particles, crop, time)
+    const ringMaxRadius = Math.min(bounds.width, bounds.height) * 0.12
+    drawHitRings(context, rings, crop, time, ringMaxRadius, dpr)
+
+    let pulse = 0
+    if (lastHitAt !== null) {
+      pulse = 1 - (time - lastHitAt) / RETICLE_PULSE_DURATION_MS
+      pulse = Math.max(0, pulse) * Math.max(0, pulse)
+    }
+
     const { position } = useTrackingStore.getState()
 
     if (position) {
@@ -107,9 +123,10 @@ export class GameRenderer {
             MAX_RADIUS_CSS,
           ) *
           dpr *
-          (0.85 + 0.15 * ease)
+          (0.85 + 0.15 * ease) *
+          (1 + 0.18 * pulse)
 
-        drawReticle(context, { x, y, radius, alpha: ease, dpr })
+        drawReticle(context, { x, y, radius, alpha: ease, dpr, pulse })
       }
     } else {
       this.reticleLock = clamp(

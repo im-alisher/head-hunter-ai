@@ -37,7 +37,7 @@ export class ScoreEngine {
     for (const target of this.prevTargets.values()) {
       if (current.has(target.id)) continue
 
-      if (time < target.expiresAt) {
+      if (target.destroyedAt !== undefined || time < target.expiresAt) {
         stats = applyHit(stats)
       } else {
         stats = applyMiss(stats)

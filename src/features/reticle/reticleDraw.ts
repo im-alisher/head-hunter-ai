@@ -2,17 +2,21 @@ const TWO_PI = Math.PI * 2
 const COLOR_MAIN = '#34d399'
 const COLOR_CORE = '#f8fafc'
 
+export const RETICLE_PULSE_DURATION_MS = 400
+
 export interface ReticleDrawOptions {
   x: number
   y: number
   radius: number
   alpha: number
   dpr: number
+  /** Hit-feedback pulse strength in the range 0..1. */
+  pulse?: number
 }
 
 export function drawReticle(
   context: CanvasRenderingContext2D,
-  { x, y, radius, alpha, dpr }: ReticleDrawOptions,
+  { x, y, radius, alpha, dpr, pulse = 0 }: ReticleDrawOptions,
 ): void {
   context.save()
   context.translate(x, y)
@@ -26,7 +30,7 @@ export function drawReticle(
     0,
     radius * 1.25,
   )
-  glow.addColorStop(0, 'rgba(52, 211, 153, 0.16)')
+  glow.addColorStop(0, `rgba(52, 211, 153, ${0.16 + pulse * 0.2})`)
   glow.addColorStop(1, 'rgba(52, 211, 153, 0)')
   context.fillStyle = glow
   context.beginPath()
@@ -38,6 +42,15 @@ export function drawReticle(
   context.beginPath()
   context.arc(0, 0, radius, 0, TWO_PI)
   context.stroke()
+
+  if (pulse > 0) {
+    context.globalAlpha = alpha * pulse * 0.8
+    context.lineWidth = 2.2 * dpr
+    context.beginPath()
+    context.arc(0, 0, radius * (1 + pulse * 0.8), 0, TWO_PI)
+    context.stroke()
+    context.globalAlpha = alpha
+  }
 
   context.lineCap = 'round'
   const tickInner = radius * 0.72

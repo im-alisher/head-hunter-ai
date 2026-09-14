@@ -7,7 +7,11 @@ export interface Target {
   radius: number
   createdAt: number
   expiresAt: number
+  /** Set when the target was destroyed by a hit; triggers the destruction animation. */
+  destroyedAt?: number
 }
+
+export const DESTRUCTION_DURATION_MS = 350
 
 export interface CreateTargetOptions {
   id: string
