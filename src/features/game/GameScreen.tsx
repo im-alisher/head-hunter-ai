@@ -7,14 +7,16 @@ import { GameCanvas } from '@/features/game/GameCanvas'
 import { TrackingBadge } from '@/features/tracking/TrackingBadge'
 import { useCamera } from '@/hooks/useCamera'
 import { useFaceDetection } from '@/hooks/useFaceDetection'
+import { useGameRenderer } from '@/hooks/useGameRenderer'
 import { useHeadTracking } from '@/hooks/useHeadTracking'
-import { useReticle } from '@/hooks/useReticle'
+import { useTargets } from '@/hooks/useTargets'
 
 export function GameScreen() {
   const { videoRef, start, stop } = useCamera()
   useFaceDetection()
   useHeadTracking()
-  useReticle()
+  useTargets()
+  useGameRenderer()
 
   useEffect(() => () => stop(), [stop])
 

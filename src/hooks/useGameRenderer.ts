@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react'
 import { useCameraStore } from '@/features/camera/cameraStore'
-import { ReticleRenderer } from '@/features/reticle/reticleRenderer'
+import { GameRenderer } from '@/features/game/gameRenderer'
 
-export function useReticle(): void {
+export function useGameRenderer(): void {
   const cameraStatus = useCameraStore((state) => state.status)
-  const rendererRef = useRef<ReticleRenderer | null>(null)
+  const rendererRef = useRef<GameRenderer | null>(null)
 
   useEffect(() => {
     if (cameraStatus !== 'ready') return
 
-    const renderer = new ReticleRenderer()
+    const renderer = new GameRenderer()
     rendererRef.current = renderer
     renderer.start()
 
