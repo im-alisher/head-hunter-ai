@@ -9,6 +9,7 @@ import { useCamera } from '@/hooks/useCamera'
 import { useFaceDetection } from '@/hooks/useFaceDetection'
 import { useGameRenderer } from '@/hooks/useGameRenderer'
 import { useHeadTracking } from '@/hooks/useHeadTracking'
+import { useScoring } from '@/hooks/useScoring'
 import { useTargets } from '@/hooks/useTargets'
 
 export function GameScreen() {
@@ -16,6 +17,7 @@ export function GameScreen() {
   useFaceDetection()
   useHeadTracking()
   useTargets()
+  useScoring()
   useGameRenderer()
 
   useEffect(() => () => stop(), [stop])
